@@ -516,7 +516,7 @@
     // ---------- 登录日志读写（存在独立的 jsonbin Bin）----------
     // 注意：日志功能需要你在 jsonbin.io 另建一个专用 Bin 存日志
     // 新建 Bin 步骤：登录 jsonbin.io → New Bin → 内容填 {"logs":[]} → 保存 → 复制 Bin ID 填到上方 LOG_BIN_ID
-    const LOG_DEDICATED_BIN_ID = "https://api.jsonbin.io/v3/b/69da5c6faaba882197ea14ff";  // 填入你的日志专用 Bin ID，留空则使用上面的 LOG_BIN_ID
+    const LOG_DEDICATED_BIN_ID = "69da5c6faaba882197ea14ff";  // 填入你的日志专用 Bin ID，留空则使用上面的 LOG_BIN_ID
 
     async function writeLoginLog(user, status, note) {
         try {
