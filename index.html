@@ -286,51 +286,7 @@
             margin-top: 10px;
             min-height: 18px;
         }
-        /* ===== 登录日志面板 ===== */
-        #logPanel {
-            background: #f8f9fc;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-        }
-        #logPanel h3 {
-            margin: 0 0 12px;
-            font-size: 0.95rem;
-            color: #1e466e;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        #logTable {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.8rem;
-        }
-        #logTable th {
-            background: #eef2f6;
-            padding: 8px;
-            text-align: left;
-            border-bottom: 1px solid #cbd5e1;
-            position: relative;
-        }
-        #logTable td {
-            padding: 6px 8px;
-            border-bottom: 1px solid #f0f0f0;
-            color: #374151;
-        }
-        #logTable tr:last-child td { border-bottom: none; }
-        .log-success { color: #15803d; font-weight: 600; }
-        .log-fail { color: #b91c1c; font-weight: 600; }
-        .log-toggle-btn {
-            font-size: 0.75rem;
-            padding: 3px 10px;
-            background: white;
-            border: 1px solid #cbd5e1;
-            color: #374151;
-            border-radius: 20px;
-            cursor: pointer;
-        }
+
     </style>
 </head>
 <body>
@@ -359,20 +315,6 @@
         <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
             <span id="currentUserBadge" style="font-size:0.8rem;color:#5a6874;background:#eef2fa;padding:5px 12px;border-radius:20px;"></span>
             <button id="logoutBtn" class="btn-outline" style="font-size:0.8rem;padding:6px 14px;">🔓 登出</button>
-        </div>
-    </div>
-
-    <!-- 登录日志 -->
-    <div id="logPanel">
-        <h3>
-            📋 登录日志
-            <button class="log-toggle-btn" id="logToggleBtn">收起</button>
-        </h3>
-        <div id="logContent">
-            <table id="logTable">
-                <thead><tr><th>时间</th><th>用户</th><th>状态</th><th>备注</th></tr></thead>
-                <tbody id="logBody"><tr><td colspan="4" style="color:#aaa;text-align:center;">加载中...</td></tr></tbody>
-            </table>
         </div>
     </div>
 
@@ -437,21 +379,15 @@
     // ======================== 登录密码配置（在这里修改密码和用户名）========================
     // 格式：{ 用户名显示: "密码" }
     const USER_PASSWORDS = {
-        "管理员":  "123321",
-        "操作员A":   "123",
-        "操作员B":   "456"
+        "管理员":  "admin123",
+        "用户A":   "123",
+        "用户B":   "456"
     };
     // 登录日志存放的 jsonbin Bin ID（建议另建一个 Bin 专门存日志，也可以和数据共用）
     // 如需另建，在 jsonbin.io 新建一个 Bin 内容为 [] ，填入新的 Bin ID
-    const LOG_BIN_ID = "69da18d8aaba882197e8ed94";  // 暂时与数据共用，建议另建
-    // 注意：如果你另建了日志 Bin，请把上面这行改成新的 Bin ID，并取消下面注释：
-    // const LOG_BIN_ID = "你的日志BinID";
-    const LOG_BIN_URL = `https://api.jsonbin.io/v3/b/${LOG_BIN_ID}`;
     // =============================================================================
 
     let currentUser = null;
-    let loginLogs = [];
-
     // ---------- 登录逻辑 ----------
     function setupLogin() {
         const overlay = document.getElementById('loginOverlay');
@@ -465,25 +401,19 @@
             togglePw.textContent = pwInput.type === 'password' ? '👁' : '🙈';
         });
 
-        async function attemptLogin() {
+        function attemptLogin() {
             const pw = pwInput.value.trim();
             if (!pw) { loginError.textContent = '请输入密码'; return; }
-
-            // 查找匹配的用户
             const matchedUser = Object.entries(USER_PASSWORDS).find(([, pass]) => pass === pw);
-
             if (matchedUser) {
                 currentUser = matchedUser[0];
                 loginError.textContent = '';
                 overlay.classList.add('hidden');
                 document.getElementById('currentUserBadge').textContent = `👤 ${currentUser}`;
-                await writeLoginLog(currentUser, '✅ 成功', '');
-                await loadLoginLogs();
             } else {
                 loginError.textContent = '密码错误，请重试';
                 pwInput.value = '';
                 pwInput.focus();
-                await writeLoginLog('未知', '❌ 失败', `输入了错误密码`);
             }
         }
 
@@ -498,90 +428,7 @@
             pwInput.focus();
         });
 
-        document.getElementById('logToggleBtn').addEventListener('click', () => {
-            const content = document.getElementById('logContent');
-            const btn = document.getElementById('logToggleBtn');
-            if (content.style.display === 'none') {
-                content.style.display = '';
-                btn.textContent = '收起';
-            } else {
-                content.style.display = 'none';
-                btn.textContent = '展开';
-            }
-        });
-
         pwInput.focus();
-    }
-
-    // ---------- 登录日志读写（存在独立的 jsonbin Bin）----------
-    // 注意：日志功能需要你在 jsonbin.io 另建一个专用 Bin 存日志
-    // 新建 Bin 步骤：登录 jsonbin.io → New Bin → 内容填 {"logs":[]} → 保存 → 复制 Bin ID 填到上方 LOG_BIN_ID
-    const LOG_DEDICATED_BIN_ID = "69da5c6faaba882197ea14ff";  // 填入你的日志专用 Bin ID，留空则使用上面的 LOG_BIN_ID
-
-    async function writeLoginLog(user, status, note) {
-        try {
-            // 先读取现有日志
-            const binId = LOG_DEDICATED_BIN_ID || LOG_BIN_ID;
-            const logUrl = `https://api.jsonbin.io/v3/b/${binId}`;
-            const getRes = await fetch(logUrl, { headers: { 'X-Master-Key': JSONBIN_API_KEY } });
-            let existingLogs = [];
-            if (getRes.ok) {
-                const d = await getRes.json();
-                // 支持两种格式：数组 或 {logs:[]}
-                if (Array.isArray(d.record)) existingLogs = d.record;
-                else if (d.record && Array.isArray(d.record.logs)) existingLogs = d.record.logs;
-            }
-
-            const now = new Date();
-            const timeStr = now.toLocaleString('zh-CN', { hour12: false,
-                year:'numeric', month:'2-digit', day:'2-digit',
-                hour:'2-digit', minute:'2-digit', second:'2-digit' });
-            const newEntry = { time: timeStr, user, status, note };
-
-            // 只保留最新 100 条
-            existingLogs.unshift(newEntry);
-            if (existingLogs.length > 100) existingLogs = existingLogs.slice(0, 100);
-
-            await fetch(logUrl, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY },
-                body: JSON.stringify(existingLogs)
-            });
-            loginLogs = existingLogs;
-        } catch (e) {
-            console.error("写入登录日志失败", e);
-        }
-    }
-
-    async function loadLoginLogs() {
-        try {
-            const binId = LOG_DEDICATED_BIN_ID || LOG_BIN_ID;
-            const logUrl = `https://api.jsonbin.io/v3/b/${binId}`;
-            const res = await fetch(logUrl, { headers: { 'X-Master-Key': JSONBIN_API_KEY } });
-            if (!res.ok) throw new Error();
-            const d = await res.json();
-            if (Array.isArray(d.record)) loginLogs = d.record;
-            else if (d.record && Array.isArray(d.record.logs)) loginLogs = d.record.logs;
-        } catch (e) {
-            loginLogs = [];
-        }
-        renderLoginLogs();
-    }
-
-    function renderLoginLogs() {
-        const tbody = document.getElementById('logBody');
-        if (!loginLogs || loginLogs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="color:#aaa;text-align:center;">暂无登录记录</td></tr>';
-            return;
-        }
-        tbody.innerHTML = loginLogs.map(log => `
-            <tr>
-                <td>${log.time || ''}</td>
-                <td>${log.user || ''}</td>
-                <td class="${log.status && log.status.includes('✅') ? 'log-success' : 'log-fail'}">${log.status || ''}</td>
-                <td>${log.note || ''}</td>
-            </tr>
-        `).join('');
     }
     // =============================================================================
 
@@ -1062,7 +909,6 @@
         document.getElementById('importCsvInput').addEventListener('change', (e) => { if(e.target.files.length) importCSV(e.target.files[0]); e.target.value = ''; });
         document.getElementById('resetDefaultBtn').addEventListener('click', resetToDefault);
         await loadDataFromCloud();   // 从云端加载数据
-        await loadLoginLogs();       // 加载登录日志
         setMode('query');
     });
 </script>
