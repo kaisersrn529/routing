@@ -379,9 +379,9 @@
     // ======================== 登录密码配置（在这里修改密码和用户名）========================
     // 格式：{ 用户名显示: "密码" }
     const USER_PASSWORDS = {
-        "管理员":  "admin123",
-        "用户A":   "123",
-        "用户B":   "456"
+        "管理员":  "123321",
+        "操作员A":   "123",
+        "操作员B":   "456"
     };
     // 登录日志存放的 jsonbin Bin ID（建议另建一个 Bin 专门存日志，也可以和数据共用）
     // 如需另建，在 jsonbin.io 新建一个 Bin 内容为 [] ，填入新的 Bin ID
@@ -452,8 +452,8 @@
     const PAYMENT_OPTIONS = ["预付", "到付"];
     const WEIGHT_OPTIONS = ["0-15kg", ">15kg"];
     const CARGO_OPTIONS = ["文件", "衣服", "化妆品", "带电"];
-    const PORT_OPTIONS = ["CAN", "CTU", "SHA", "HKG", "PVG", "PEK", "LAX", "JFK", "FRA", "LHR", "AMS", "CDG", "NRT", "SIN", "SYD", "DXB"];
-    const AIRLINE_OPTIONS = ["EK", "EY", "CA", "CZ", "MU", "AF", "LH"];
+    const PORT_OPTIONS = ["CAN", "CTU", "SHA", "HKG" ];
+    const AIRLINE_OPTIONS = ["EK", "EY", "CA", "CZ"];
 
     // 默认数据（如果云端为空则使用此数据初始化）
     const DEFAULT_RULES = [
