@@ -360,7 +360,7 @@
         <table id="rulesTable">
             <thead>
                 <tr><th style="width:30px"><input type="checkbox" id="selectAllCheckbox"></th>
-                    <th>区域</th><th>国家</th><th>付款方式</th><th>重量段</th><th>货物类型</th><th>口岸</th><th>航司</th><th>路由结果</th><th>优先级</th>
+                    <th>区域</th><th>国家</th><th>国家英文</th><th>付款方式</th><th>重量段</th><th>货物类型</th><th>口岸</th><th>航司</th><th>路由结果</th><th>备注</th><th>优先级</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -379,9 +379,9 @@
     // ======================== 登录密码配置（在这里修改密码和用户名）========================
     // 格式：{ 用户名显示: "密码" }
     const USER_PASSWORDS = {
-        "管理员":  "123321",
-        "操作员A":   "123",
-        "操作员B":   "456"
+        "管理员":  "admin123",
+        "用户A":   "123",
+        "用户B":   "456"
     };
     // 登录日志存放的 jsonbin Bin ID（建议另建一个 Bin 专门存日志，也可以和数据共用）
     // 如需另建，在 jsonbin.io 新建一个 Bin 内容为 [] ，填入新的 Bin ID
@@ -448,28 +448,59 @@
     const FULL_COUNTRY_LIST = [...new Set(ALL_COUNTRIES)].sort((a,b) => a.localeCompare(b, 'zh'));
     const REGIONS = Object.keys(REGION_COUNTRY_MAP).sort();
 
+    // 国家中英文对照表
+    const COUNTRY_EN_MAP = {
+        "新加坡":"Singapore","马来西亚":"Malaysia","泰国":"Thailand","越南":"Vietnam",
+        "印度尼西亚":"Indonesia","菲律宾":"Philippines","缅甸":"Myanmar","老挝":"Laos",
+        "柬埔寨":"Cambodia","文莱":"Brunei",
+        "中国":"China","日本":"Japan","韩国":"South Korea","中国台湾":"Taiwan",
+        "中国香港":"Hong Kong","中国澳门":"Macau","蒙古":"Mongolia",
+        "印度":"India","巴基斯坦":"Pakistan","孟加拉":"Bangladesh","尼泊尔":"Nepal",
+        "斯里兰卡":"Sri Lanka","马尔代夫":"Maldives",
+        "阿联酋":"UAE","沙特阿拉伯":"Saudi Arabia","卡塔尔":"Qatar","科威特":"Kuwait",
+        "阿曼":"Oman","巴林":"Bahrain","土耳其":"Turkey","以色列":"Israel",
+        "约旦":"Jordan","伊拉克":"Iraq","伊朗":"Iran","黎巴嫩":"Lebanon","也门":"Yemen",
+        "英国":"UK","法国":"France","德国":"Germany","意大利":"Italy","西班牙":"Spain",
+        "荷兰":"Netherlands","比利时":"Belgium","瑞士":"Switzerland","瑞典":"Sweden",
+        "挪威":"Norway","丹麦":"Denmark","芬兰":"Finland","波兰":"Poland","捷克":"Czech Republic",
+        "奥地利":"Austria","匈牙利":"Hungary","希腊":"Greece","葡萄牙":"Portugal",
+        "爱尔兰":"Ireland","俄罗斯":"Russia","乌克兰":"Ukraine","白俄罗斯":"Belarus",
+        "罗马尼亚":"Romania","保加利亚":"Bulgaria","塞尔维亚":"Serbia","克罗地亚":"Croatia",
+        "阿塞拜疆":"Azerbaijan","亚美尼亚":"Armenia","格鲁吉亚":"Georgia",
+        "美国":"USA","加拿大":"Canada","墨西哥":"Mexico","巴西":"Brazil","阿根廷":"Argentina",
+        "智利":"Chile","秘鲁":"Peru","哥伦比亚":"Colombia","乌拉圭":"Uruguay",
+        "巴拉圭":"Paraguay","玻利维亚":"Bolivia","厄瓜多尔":"Ecuador","委内瑞拉":"Venezuela",
+        "哥斯达黎加":"Costa Rica","巴拿马":"Panama","古巴":"Cuba","牙买加":"Jamaica","多米尼加":"Dominican Republic",
+        "南非":"South Africa","埃及":"Egypt","尼日利亚":"Nigeria","肯尼亚":"Kenya",
+        "埃塞俄比亚":"Ethiopia","摩洛哥":"Morocco","阿尔及利亚":"Algeria","安哥拉":"Angola",
+        "加纳":"Ghana","坦桑尼亚":"Tanzania","乌干达":"Uganda","苏丹":"Sudan",
+        "利比亚":"Libya","突尼斯":"Tunisia","塞内加尔":"Senegal","科特迪瓦":"Ivory Coast",
+        "喀麦隆":"Cameroon","津巴布韦":"Zimbabwe","赞比亚":"Zambia","莫桑比克":"Mozambique",
+        "澳大利亚":"Australia","新西兰":"New Zealand","斐济":"Fiji","巴布亚新几内亚":"Papua New Guinea"
+    };
+
     // 固定选项
     const PAYMENT_OPTIONS = ["预付", "到付"];
     const WEIGHT_OPTIONS = ["0-15kg", ">15kg"];
     const CARGO_OPTIONS = ["文件", "衣服", "化妆品", "带电"];
-    const PORT_OPTIONS = ["CAN", "CTU", "SHA", "HKG" ];
-    const AIRLINE_OPTIONS = ["EK", "EY", "CA", "CZ"];
+    const PORT_OPTIONS = ["CAN", "CTU", "SHA", "HKG", "PVG", "PEK", "LAX", "JFK", "FRA", "LHR", "AMS", "CDG", "NRT", "SIN", "SYD", "DXB"];
+    const AIRLINE_OPTIONS = ["EK", "EY", "CA", "CZ", "MU", "AF", "LH"];
 
     // 默认数据（如果云端为空则使用此数据初始化）
     const DEFAULT_RULES = [
-        { region:"东南亚", country:"新加坡", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"SIN", airline:"SQ", routeCode:"HUB-SIN-01", priority:10 },
-        { region:"东南亚", country:"马来西亚", payment:"预付", weightSeg:"0-15kg", cargoType:"衣服", port:"KUL", airline:"MH", routeCode:"HUB-KUL-01", priority:10 },
-        { region:"东南亚", country:"泰国", payment:"到付", weightSeg:">15kg", cargoType:"带电", port:"BKK", airline:"TG", routeCode:"HUB-BKK-BAT", priority:12 },
-        { region:"东亚", country:"中国", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"PVG", airline:"CA", routeCode:"HUB-PVG-01", priority:10 },
-        { region:"东亚", country:"中国", payment:"预付", weightSeg:">15kg", cargoType:"化妆品", port:"CAN", airline:"CZ", routeCode:"HUB-CAN-01", priority:10 },
-        { region:"东亚", country:"日本", payment:"预付", weightSeg:"0-15kg", cargoType:"衣服", port:"NRT", airline:"NH", routeCode:"HUB-NRT-01", priority:10 },
-        { region:"中东", country:"阿联酋", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"DXB", airline:"EK", routeCode:"HUB-DXB-01", priority:10 },
-        { region:"中东", country:"沙特阿拉伯", payment:"到付", weightSeg:">15kg", cargoType:"带电", port:"RUH", airline:"SV", routeCode:"HUB-RUH-01", priority:11 },
-        { region:"欧洲", country:"德国", payment:"预付", weightSeg:"0-15kg", cargoType:"化妆品", port:"FRA", airline:"LH", routeCode:"HUB-FRA-01", priority:10 },
-        { region:"欧洲", country:"英国", payment:"预付", weightSeg:"0-15kg", cargoType:"衣服", port:"LHR", airline:"VS", routeCode:"HUB-LHR-01", priority:10 },
-        { region:"美洲", country:"美国", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"LAX", airline:"CZ", routeCode:"HUB-LAX-01", priority:10 },
-        { region:"美洲", country:"加拿大", payment:"到付", weightSeg:">15kg", cargoType:"带电", port:"YVR", airline:"AC", routeCode:"HUB-YVR-01", priority:10 },
-        { region:"大洋洲", country:"澳大利亚", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"SYD", airline:"QF", routeCode:"HUB-SYD-01", priority:10 }
+        { region:"东南亚", country:"新加坡", countryEn:"Singapore", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"SIN", airline:"SQ", routeCode:"HUB-SIN-01", remark:"", priority:10 },
+        { region:"东南亚", country:"马来西亚", countryEn:"Malaysia", payment:"预付", weightSeg:"0-15kg", cargoType:"衣服", port:"KUL", airline:"MH", routeCode:"HUB-KUL-01", remark:"", priority:10 },
+        { region:"东南亚", country:"泰国", countryEn:"Thailand", payment:"到付", weightSeg:">15kg", cargoType:"带电", port:"BKK", airline:"TG", routeCode:"HUB-BKK-BAT", remark:"", priority:12 },
+        { region:"东亚", country:"中国", countryEn:"China", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"PVG", airline:"CA", routeCode:"HUB-PVG-01", remark:"", priority:10 },
+        { region:"东亚", country:"中国", countryEn:"China", payment:"预付", weightSeg:">15kg", cargoType:"化妆品", port:"CAN", airline:"CZ", routeCode:"HUB-CAN-01", remark:"", priority:10 },
+        { region:"东亚", country:"日本", countryEn:"Japan", payment:"预付", weightSeg:"0-15kg", cargoType:"衣服", port:"NRT", airline:"NH", routeCode:"HUB-NRT-01", remark:"", priority:10 },
+        { region:"中东", country:"阿联酋", countryEn:"UAE", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"DXB", airline:"EK", routeCode:"HUB-DXB-01", remark:"", priority:10 },
+        { region:"中东", country:"沙特阿拉伯", countryEn:"Saudi Arabia", payment:"到付", weightSeg:">15kg", cargoType:"带电", port:"RUH", airline:"SV", routeCode:"HUB-RUH-01", remark:"", priority:11 },
+        { region:"欧洲", country:"德国", countryEn:"Germany", payment:"预付", weightSeg:"0-15kg", cargoType:"化妆品", port:"FRA", airline:"LH", routeCode:"HUB-FRA-01", remark:"", priority:10 },
+        { region:"欧洲", country:"英国", countryEn:"UK", payment:"预付", weightSeg:"0-15kg", cargoType:"衣服", port:"LHR", airline:"VS", routeCode:"HUB-LHR-01", remark:"", priority:10 },
+        { region:"美洲", country:"美国", countryEn:"USA", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"LAX", airline:"CZ", routeCode:"HUB-LAX-01", remark:"", priority:10 },
+        { region:"美洲", country:"加拿大", countryEn:"Canada", payment:"到付", weightSeg:">15kg", cargoType:"带电", port:"YVR", airline:"AC", routeCode:"HUB-YVR-01", remark:"", priority:10 },
+        { region:"大洋洲", country:"澳大利亚", countryEn:"Australia", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"SYD", airline:"QF", routeCode:"HUB-SYD-01", remark:"", priority:10 }
     ];
 
     let rulesData = [];
@@ -550,6 +581,8 @@
             const existing = getUniqueValues('routeCode');
             return { type: 'input', options: existing };
         }
+        if (field === 'countryEn') return { type: 'input', options: [] };
+        if (field === 'remark') return { type: 'input', options: [] };
         if (field === 'priority') return { type: 'number', min: 0, max: 100 };
         return [];
     }
@@ -631,6 +664,10 @@
                         rulesData[rowIdx].region = autoRegion;
                     }
                 }
+                // 自动带出国家英文
+                if (COUNTRY_EN_MAP[newCountry]) {
+                    rulesData[rowIdx].countryEn = COUNTRY_EN_MAP[newCountry];
+                }
             }
             saveCallback(newVal);
             editorDiv.remove();
@@ -688,7 +725,7 @@
             chk.dataset.idx = originalIndex;
             tdCheck.appendChild(chk);
             tr.appendChild(tdCheck);
-            const columns = ['region','country','payment','weightSeg','cargoType','port','airline','routeCode','priority'];
+            const columns = ['region','country','countryEn','payment','weightSeg','cargoType','port','airline','routeCode','remark','priority'];
             columns.forEach(col => {
                 const td = document.createElement('td');
                 td.textContent = rule[col] !== undefined ? rule[col] : '';
@@ -772,8 +809,8 @@
     async function addNewRule() {
         if (currentMode !== 'edit') { alert("请切换到修改模式后再添加规则"); return; }
         rulesData.push({
-            region: "东南亚", country: "新加坡", payment: "预付", weightSeg: "0-15kg",
-            cargoType: "文件", port: "SIN", airline: "SQ", routeCode: "NEW-HUB", priority: 5
+            region: "东南亚", country: "新加坡", countryEn: "Singapore", payment: "预付", weightSeg: "0-15kg",
+            cargoType: "文件", port: "SIN", airline: "SQ", routeCode: "NEW-HUB", remark: "", priority: 5
         });
         await saveDataToCloud();
         renderTable();
@@ -793,8 +830,8 @@
     }
 
     function exportToCSV() {
-        const headers = ['区域','国家','付款方式','重量段','货物类型','口岸','航司','路由结果','优先级'];
-        const rows = rulesData.map(r => [r.region, r.country, r.payment, r.weightSeg, r.cargoType, r.port, r.airline, r.routeCode, r.priority]);
+        const headers = ['区域','国家','国家英文','付款方式','重量段','货物类型','口岸','航司','路由结果','备注','优先级'];
+        const rows = rulesData.map(r => [r.region, r.country, r.countryEn||'', r.payment, r.weightSeg, r.cargoType, r.port, r.airline, r.routeCode, r.remark||'', r.priority]);
         const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
         const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -819,6 +856,7 @@
             const colMap = {};
             headers.forEach((h, idx) => {
                 if (h.includes('区域')) colMap.region = idx;
+                else if (h.includes('国家英文')) colMap.countryEn = idx;
                 else if (h.includes('国家')) colMap.country = idx;
                 else if (h.includes('付款')) colMap.payment = idx;
                 else if (h.includes('重量')) colMap.weightSeg = idx;
@@ -826,6 +864,7 @@
                 else if (h.includes('口岸')) colMap.port = idx;
                 else if (h.includes('航司')) colMap.airline = idx;
                 else if (h.includes('路由')) colMap.routeCode = idx;
+                else if (h.includes('备注')) colMap.remark = idx;
                 else if (h.includes('优先')) colMap.priority = idx;
             });
             for (let i=1; i<lines.length; i++) {
@@ -835,12 +874,14 @@
                 const rule = {
                     region: colMap.region !== undefined ? parts[colMap.region] : '',
                     country: colMap.country !== undefined ? parts[colMap.country] : '',
+                    countryEn: colMap.countryEn !== undefined ? parts[colMap.countryEn] : '',
                     payment: colMap.payment !== undefined ? parts[colMap.payment] : '预付',
                     weightSeg: colMap.weightSeg !== undefined ? parts[colMap.weightSeg] : '0-15kg',
                     cargoType: colMap.cargoType !== undefined ? parts[colMap.cargoType] : '文件',
                     port: colMap.port !== undefined ? parts[colMap.port] : '',
                     airline: colMap.airline !== undefined ? parts[colMap.airline] : '',
                     routeCode: colMap.routeCode !== undefined ? parts[colMap.routeCode] : '',
+                    remark: colMap.remark !== undefined ? parts[colMap.remark] : '',
                     priority: colMap.priority !== undefined ? parseInt(parts[colMap.priority]) || 5 : 5
                 };
                 if (rule.country && rule.routeCode) newRules.push(rule);
