@@ -362,7 +362,7 @@
         <table id="rulesTable">
             <thead>
                 <tr><th style="width:30px"><input type="checkbox" id="selectAllCheckbox"></th>
-                    <th>区域</th><th>国家</th><th>付款方式</th><th>重量段</th><th>货物类型</th><th>口岸</th><th>航司</th><th>路由结果</th><th>优先级</th>
+                    <th>区域</th><th>国家</th><th>English</th><th>代码</th><th>付款方式</th><th>重量段</th><th>货物类型</th><th>口岸</th><th>航司</th><th>路由结果</th><th>备注</th><th>优先级</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -436,16 +436,134 @@
     }
     // =============================================================================
 
-    // 区域-国家映射（与之前相同）
+    // 区域-国家映射（含英文名和二字代码）
+    const COUNTRY_INFO = {
+        // 东南亚
+        "新加坡":     { en: "Singapore",    code: "SG" },
+        "马来西亚":   { en: "Malaysia",      code: "MY" },
+        "泰国":       { en: "Thailand",      code: "TH" },
+        "越南":       { en: "Vietnam",       code: "VN" },
+        "印度尼西亚": { en: "Indonesia",     code: "ID" },
+        "菲律宾":     { en: "Philippines",   code: "PH" },
+        "缅甸":       { en: "Myanmar",       code: "MM" },
+        "老挝":       { en: "Laos",          code: "LA" },
+        "柬埔寨":     { en: "Cambodia",      code: "KH" },
+        "文莱":       { en: "Brunei",        code: "BN" },
+        // 东亚
+        "中国":       { en: "China",         code: "CN" },
+        "日本":       { en: "Japan",         code: "JP" },
+        "韩国":       { en: "South Korea",   code: "KR" },
+        "中国台湾":   { en: "Taiwan",        code: "TW" },
+        "中国香港":   { en: "Hong Kong",     code: "HK" },
+        "中国澳门":   { en: "Macau",         code: "MO" },
+        "蒙古":       { en: "Mongolia",      code: "MN" },
+        // 南亚
+        "印度":       { en: "India",         code: "IN" },
+        "巴基斯坦":   { en: "Pakistan",      code: "PK" },
+        "孟加拉":     { en: "Bangladesh",    code: "BD" },
+        "尼泊尔":     { en: "Nepal",         code: "NP" },
+        "斯里兰卡":   { en: "Sri Lanka",     code: "LK" },
+        "马尔代夫":   { en: "Maldives",      code: "MV" },
+        // 中东
+        "阿联酋":     { en: "UAE",           code: "AE" },
+        "沙特阿拉伯": { en: "Saudi Arabia",  code: "SA" },
+        "卡塔尔":     { en: "Qatar",         code: "QA" },
+        "科威特":     { en: "Kuwait",        code: "KW" },
+        "阿曼":       { en: "Oman",          code: "OM" },
+        "巴林":       { en: "Bahrain",       code: "BH" },
+        "土耳其":     { en: "Turkey",        code: "TR" },
+        "以色列":     { en: "Israel",        code: "IL" },
+        "约旦":       { en: "Jordan",        code: "JO" },
+        "伊拉克":     { en: "Iraq",          code: "IQ" },
+        "伊朗":       { en: "Iran",          code: "IR" },
+        "黎巴嫩":     { en: "Lebanon",       code: "LB" },
+        "也门":       { en: "Yemen",         code: "YE" },
+        // 欧洲
+        "英国":       { en: "UK",            code: "GB" },
+        "法国":       { en: "France",        code: "FR" },
+        "德国":       { en: "Germany",       code: "DE" },
+        "意大利":     { en: "Italy",         code: "IT" },
+        "西班牙":     { en: "Spain",         code: "ES" },
+        "荷兰":       { en: "Netherlands",   code: "NL" },
+        "比利时":     { en: "Belgium",       code: "BE" },
+        "瑞士":       { en: "Switzerland",   code: "CH" },
+        "瑞典":       { en: "Sweden",        code: "SE" },
+        "挪威":       { en: "Norway",        code: "NO" },
+        "丹麦":       { en: "Denmark",       code: "DK" },
+        "芬兰":       { en: "Finland",       code: "FI" },
+        "波兰":       { en: "Poland",        code: "PL" },
+        "捷克":       { en: "Czech",         code: "CZ" },
+        "奥地利":     { en: "Austria",       code: "AT" },
+        "匈牙利":     { en: "Hungary",       code: "HU" },
+        "希腊":       { en: "Greece",        code: "GR" },
+        "葡萄牙":     { en: "Portugal",      code: "PT" },
+        "爱尔兰":     { en: "Ireland",       code: "IE" },
+        "俄罗斯":     { en: "Russia",        code: "RU" },
+        "乌克兰":     { en: "Ukraine",       code: "UA" },
+        "白俄罗斯":   { en: "Belarus",       code: "BY" },
+        "罗马尼亚":   { en: "Romania",       code: "RO" },
+        "保加利亚":   { en: "Bulgaria",      code: "BG" },
+        "塞尔维亚":   { en: "Serbia",        code: "RS" },
+        "克罗地亚":   { en: "Croatia",       code: "HR" },
+        "阿塞拜疆":   { en: "Azerbaijan",    code: "AZ" },
+        "亚美尼亚":   { en: "Armenia",       code: "AM" },
+        "格鲁吉亚":   { en: "Georgia",       code: "GE" },
+        // 美洲
+        "美国":       { en: "USA",           code: "US" },
+        "加拿大":     { en: "Canada",        code: "CA" },
+        "墨西哥":     { en: "Mexico",        code: "MX" },
+        "巴西":       { en: "Brazil",        code: "BR" },
+        "阿根廷":     { en: "Argentina",     code: "AR" },
+        "智利":       { en: "Chile",         code: "CL" },
+        "秘鲁":       { en: "Peru",          code: "PE" },
+        "哥伦比亚":   { en: "Colombia",      code: "CO" },
+        "乌拉圭":     { en: "Uruguay",       code: "UY" },
+        "巴拉圭":     { en: "Paraguay",      code: "PY" },
+        "玻利维亚":   { en: "Bolivia",       code: "BO" },
+        "厄瓜多尔":   { en: "Ecuador",       code: "EC" },
+        "委内瑞拉":   { en: "Venezuela",     code: "VE" },
+        "哥斯达黎加": { en: "Costa Rica",    code: "CR" },
+        "巴拿马":     { en: "Panama",        code: "PA" },
+        "古巴":       { en: "Cuba",          code: "CU" },
+        "牙买加":     { en: "Jamaica",       code: "JM" },
+        "多米尼加":   { en: "Dominican Rep.",code: "DO" },
+        // 非洲
+        "南非":       { en: "South Africa",  code: "ZA" },
+        "埃及":       { en: "Egypt",         code: "EG" },
+        "尼日利亚":   { en: "Nigeria",       code: "NG" },
+        "肯尼亚":     { en: "Kenya",         code: "KE" },
+        "埃塞俄比亚": { en: "Ethiopia",      code: "ET" },
+        "摩洛哥":     { en: "Morocco",       code: "MA" },
+        "阿尔及利亚": { en: "Algeria",       code: "DZ" },
+        "安哥拉":     { en: "Angola",        code: "AO" },
+        "加纳":       { en: "Ghana",         code: "GH" },
+        "坦桑尼亚":   { en: "Tanzania",      code: "TZ" },
+        "乌干达":     { en: "Uganda",        code: "UG" },
+        "苏丹":       { en: "Sudan",         code: "SD" },
+        "利比亚":     { en: "Libya",         code: "LY" },
+        "突尼斯":     { en: "Tunisia",       code: "TN" },
+        "塞内加尔":   { en: "Senegal",       code: "SN" },
+        "科特迪瓦":   { en: "Ivory Coast",   code: "CI" },
+        "喀麦隆":     { en: "Cameroon",      code: "CM" },
+        "津巴布韦":   { en: "Zimbabwe",      code: "ZW" },
+        "赞比亚":     { en: "Zambia",        code: "ZM" },
+        "莫桑比克":   { en: "Mozambique",    code: "MZ" },
+        // 大洋洲
+        "澳大利亚":   { en: "Australia",     code: "AU" },
+        "新西兰":     { en: "New Zealand",   code: "NZ" },
+        "斐济":       { en: "Fiji",          code: "FJ" },
+        "巴布亚新几内亚": { en: "Papua New Guinea", code: "PG" },
+    };
+
     const REGION_COUNTRY_MAP = {
-        "东南亚": ["新加坡", "马来西亚", "泰国", "越南", "印度尼西亚", "菲律宾", "缅甸", "老挝", "柬埔寨", "文莱"],
-        "东亚": ["中国", "日本", "韩国", "中国台湾", "中国香港", "中国澳门", "蒙古"],
-        "南亚": ["印度", "巴基斯坦", "孟加拉", "尼泊尔", "斯里兰卡", "马尔代夫"],
-        "中东": ["阿联酋", "沙特阿拉伯", "卡塔尔", "科威特", "阿曼", "巴林", "土耳其", "以色列", "约旦", "伊拉克", "伊朗", "黎巴嫩", "也门"],
-        "欧洲": ["英国", "法国", "德国", "意大利", "西班牙", "荷兰", "比利时", "瑞士", "瑞典", "挪威", "丹麦", "芬兰", "波兰", "捷克", "奥地利", "匈牙利", "希腊", "葡萄牙", "爱尔兰", "俄罗斯", "乌克兰", "白俄罗斯", "罗马尼亚", "保加利亚", "塞尔维亚", "克罗地亚", "阿塞拜疆", "亚美尼亚", "格鲁吉亚"],
-        "美洲": ["美国", "加拿大", "墨西哥", "巴西", "阿根廷", "智利", "秘鲁", "哥伦比亚", "乌拉圭", "巴拉圭", "玻利维亚", "厄瓜多尔", "委内瑞拉", "哥斯达黎加", "巴拿马", "古巴", "牙买加", "多米尼加"],
-        "非洲": ["南非", "埃及", "尼日利亚", "肯尼亚", "埃塞俄比亚", "摩洛哥", "阿尔及利亚", "安哥拉", "加纳", "坦桑尼亚", "乌干达", "苏丹", "利比亚", "突尼斯", "塞内加尔", "科特迪瓦", "喀麦隆", "津巴布韦", "赞比亚", "莫桑比克"],
-        "大洋洲": ["澳大利亚", "新西兰", "斐济", "巴布亚新几内亚"]
+        "东南亚": ["新加坡","马来西亚","泰国","越南","印度尼西亚","菲律宾","缅甸","老挝","柬埔寨","文莱"],
+        "东亚":   ["中国","日本","韩国","中国台湾","中国香港","中国澳门","蒙古"],
+        "南亚":   ["印度","巴基斯坦","孟加拉","尼泊尔","斯里兰卡","马尔代夫"],
+        "中东":   ["阿联酋","沙特阿拉伯","卡塔尔","科威特","阿曼","巴林","土耳其","以色列","约旦","伊拉克","伊朗","黎巴嫩","也门"],
+        "欧洲":   ["英国","法国","德国","意大利","西班牙","荷兰","比利时","瑞士","瑞典","挪威","丹麦","芬兰","波兰","捷克","奥地利","匈牙利","希腊","葡萄牙","爱尔兰","俄罗斯","乌克兰","白俄罗斯","罗马尼亚","保加利亚","塞尔维亚","克罗地亚","阿塞拜疆","亚美尼亚","格鲁吉亚"],
+        "美洲":   ["美国","加拿大","墨西哥","巴西","阿根廷","智利","秘鲁","哥伦比亚","乌拉圭","巴拉圭","玻利维亚","厄瓜多尔","委内瑞拉","哥斯达黎加","巴拿马","古巴","牙买加","多米尼加"],
+        "非洲":   ["南非","埃及","尼日利亚","肯尼亚","埃塞俄比亚","摩洛哥","阿尔及利亚","安哥拉","加纳","坦桑尼亚","乌干达","苏丹","利比亚","突尼斯","塞内加尔","科特迪瓦","喀麦隆","津巴布韦","赞比亚","莫桑比克"],
+        "大洋洲": ["澳大利亚","新西兰","斐济","巴布亚新几内亚"],
     };
     const ALL_COUNTRIES = [];
     for (const countries of Object.values(REGION_COUNTRY_MAP)) ALL_COUNTRIES.push(...countries);
@@ -459,21 +577,21 @@
     const PORT_OPTIONS = ["CAN", "CTU", "SHA", "HKG", "PVG", "PEK", "LAX", "JFK", "FRA", "LHR", "AMS", "CDG", "NRT", "SIN", "SYD", "DXB"];
     const AIRLINE_OPTIONS = ["EK", "EY", "CA", "CZ", "MU", "AF", "LH"];
 
-    // 默认数据（如果云端为空则使用此数据初始化）
+    // 默认数据
     const DEFAULT_RULES = [
-        { region:"东南亚", country:"新加坡", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"SIN", airline:"SQ", routeCode:"HUB-SIN-01", priority:10 },
-        { region:"东南亚", country:"马来西亚", payment:"预付", weightSeg:"0-15kg", cargoType:"衣服", port:"KUL", airline:"MH", routeCode:"HUB-KUL-01", priority:10 },
-        { region:"东南亚", country:"泰国", payment:"到付", weightSeg:">15kg", cargoType:"带电", port:"BKK", airline:"TG", routeCode:"HUB-BKK-BAT", priority:12 },
-        { region:"东亚", country:"中国", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"PVG", airline:"CA", routeCode:"HUB-PVG-01", priority:10 },
-        { region:"东亚", country:"中国", payment:"预付", weightSeg:">15kg", cargoType:"化妆品", port:"CAN", airline:"CZ", routeCode:"HUB-CAN-01", priority:10 },
-        { region:"东亚", country:"日本", payment:"预付", weightSeg:"0-15kg", cargoType:"衣服", port:"NRT", airline:"NH", routeCode:"HUB-NRT-01", priority:10 },
-        { region:"中东", country:"阿联酋", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"DXB", airline:"EK", routeCode:"HUB-DXB-01", priority:10 },
-        { region:"中东", country:"沙特阿拉伯", payment:"到付", weightSeg:">15kg", cargoType:"带电", port:"RUH", airline:"SV", routeCode:"HUB-RUH-01", priority:11 },
-        { region:"欧洲", country:"德国", payment:"预付", weightSeg:"0-15kg", cargoType:"化妆品", port:"FRA", airline:"LH", routeCode:"HUB-FRA-01", priority:10 },
-        { region:"欧洲", country:"英国", payment:"预付", weightSeg:"0-15kg", cargoType:"衣服", port:"LHR", airline:"VS", routeCode:"HUB-LHR-01", priority:10 },
-        { region:"美洲", country:"美国", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"LAX", airline:"CZ", routeCode:"HUB-LAX-01", priority:10 },
-        { region:"美洲", country:"加拿大", payment:"到付", weightSeg:">15kg", cargoType:"带电", port:"YVR", airline:"AC", routeCode:"HUB-YVR-01", priority:10 },
-        { region:"大洋洲", country:"澳大利亚", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"SYD", airline:"QF", routeCode:"HUB-SYD-01", priority:10 }
+        { region:"东南亚", country:"新加坡",   countryEn:"Singapore",   countryCode:"SG", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"SIN", airline:"SQ", routeCode:"HUB-SIN-01", remark:"", priority:10 },
+        { region:"东南亚", country:"马来西亚",  countryEn:"Malaysia",    countryCode:"MY", payment:"预付", weightSeg:"0-15kg", cargoType:"衣服", port:"KUL", airline:"MH", routeCode:"HUB-KUL-01", remark:"", priority:10 },
+        { region:"东南亚", country:"泰国",      countryEn:"Thailand",    countryCode:"TH", payment:"到付", weightSeg:">15kg",  cargoType:"带电", port:"BKK", airline:"TG", routeCode:"HUB-BKK-BAT", remark:"", priority:12 },
+        { region:"东亚",   country:"中国",      countryEn:"China",       countryCode:"CN", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"PVG", airline:"CA", routeCode:"HUB-PVG-01", remark:"", priority:10 },
+        { region:"东亚",   country:"中国",      countryEn:"China",       countryCode:"CN", payment:"预付", weightSeg:">15kg",  cargoType:"化妆品",port:"CAN", airline:"CZ", routeCode:"HUB-CAN-01", remark:"", priority:10 },
+        { region:"东亚",   country:"日本",      countryEn:"Japan",       countryCode:"JP", payment:"预付", weightSeg:"0-15kg", cargoType:"衣服", port:"NRT", airline:"NH", routeCode:"HUB-NRT-01", remark:"", priority:10 },
+        { region:"中东",   country:"阿联酋",    countryEn:"UAE",         countryCode:"AE", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"DXB", airline:"EK", routeCode:"HUB-DXB-01", remark:"", priority:10 },
+        { region:"中东",   country:"沙特阿拉伯",countryEn:"Saudi Arabia",countryCode:"SA", payment:"到付", weightSeg:">15kg",  cargoType:"带电", port:"RUH", airline:"SV", routeCode:"HUB-RUH-01", remark:"", priority:11 },
+        { region:"欧洲",   country:"德国",      countryEn:"Germany",     countryCode:"DE", payment:"预付", weightSeg:"0-15kg", cargoType:"化妆品",port:"FRA", airline:"LH", routeCode:"HUB-FRA-01", remark:"", priority:10 },
+        { region:"欧洲",   country:"英国",      countryEn:"UK",          countryCode:"GB", payment:"预付", weightSeg:"0-15kg", cargoType:"衣服", port:"LHR", airline:"VS", routeCode:"HUB-LHR-01", remark:"", priority:10 },
+        { region:"美洲",   country:"美国",      countryEn:"USA",         countryCode:"US", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"LAX", airline:"CZ", routeCode:"HUB-LAX-01", remark:"", priority:10 },
+        { region:"美洲",   country:"加拿大",    countryEn:"Canada",      countryCode:"CA", payment:"到付", weightSeg:">15kg",  cargoType:"带电", port:"YVR", airline:"AC", routeCode:"HUB-YVR-01", remark:"", priority:10 },
+        { region:"大洋洲", country:"澳大利亚",  countryEn:"Australia",   countryCode:"AU", payment:"预付", weightSeg:"0-15kg", cargoType:"文件", port:"SYD", airline:"QF", routeCode:"HUB-SYD-01", remark:"", priority:10 },
     ];
 
     let rulesData = [];
@@ -559,6 +677,8 @@
             if (rowRegion && REGION_COUNTRY_MAP[rowRegion]) return REGION_COUNTRY_MAP[rowRegion];
             return FULL_COUNTRY_LIST;
         }
+        if (field === 'countryEn') return { type: 'input', options: [] };
+        if (field === 'countryCode') return { type: 'input', options: [] };
         if (field === 'payment') return PAYMENT_OPTIONS;
         if (field === 'weightSeg') return WEIGHT_OPTIONS;
         if (field === 'cargoType') return CARGO_OPTIONS;
@@ -576,6 +696,7 @@
             const existing = getUniqueValues('routeCode');
             return { type: 'input', options: existing };
         }
+        if (field === 'remark') return { type: 'input', options: [] };
         if (field === 'priority') return { type: 'number', min: 0, max: 100 };
         return [];
     }
@@ -639,29 +760,27 @@
         function commit() {
             let newVal = inputEl.value;
             if (field === 'priority') { let num = parseInt(newVal); if (isNaN(num)) num = 0; newVal = num; }
-            // 区域修改时检查国家是否匹配
             if (field === 'region') {
-                const newRegion = newVal;
                 const currentCountry = rulesData[rowIdx]?.country;
-                if (newRegion && currentCountry && !REGION_COUNTRY_MAP[newRegion]?.includes(currentCountry)) {
-                    if (confirm(`区域改为“${newRegion}”，当前国家“${currentCountry}”不属于该区域，是否清空国家？`)) {
+                if (newVal && currentCountry && !REGION_COUNTRY_MAP[newVal]?.includes(currentCountry)) {
+                    if (confirm(`区域改为"${newVal}"，当前国家"${currentCountry}"不属于该区域，是否清空国家？`)) {
                         rulesData[rowIdx].country = "";
+                        rulesData[rowIdx].countryEn = "";
+                        rulesData[rowIdx].countryCode = "";
                     }
                 }
             }
             if (field === 'country') {
-                const newCountry = newVal;
-                const autoRegion = Object.keys(REGION_COUNTRY_MAP).find(r => REGION_COUNTRY_MAP[r].includes(newCountry));
-                if (autoRegion && rulesData[rowIdx].region !== autoRegion) {
-                    if (confirm(`国家“${newCountry}”属于区域“${autoRegion}”，是否自动更新区域？`)) {
-                        rulesData[rowIdx].region = autoRegion;
-                    }
+                const autoRegion = Object.keys(REGION_COUNTRY_MAP).find(r => REGION_COUNTRY_MAP[r].includes(newVal));
+                if (autoRegion) rulesData[rowIdx].region = autoRegion;
+                if (COUNTRY_INFO[newVal]) {
+                    rulesData[rowIdx].countryEn   = COUNTRY_INFO[newVal].en;
+                    rulesData[rowIdx].countryCode = COUNTRY_INFO[newVal].code;
                 }
             }
             saveCallback(newVal);
             editorDiv.remove();
         }
-
         function cancel() { editorDiv.remove(); }
         inputEl.addEventListener('blur', commit);
         inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); commit(); } else if (e.key === 'Escape') cancel(); });
@@ -714,7 +833,7 @@
             chk.dataset.idx = originalIndex;
             tdCheck.appendChild(chk);
             tr.appendChild(tdCheck);
-            const columns = ['region','country','payment','weightSeg','cargoType','port','airline','routeCode','priority'];
+            const columns = ['region','country','countryEn','countryCode','payment','weightSeg','cargoType','port','airline','routeCode','remark','priority'];
             columns.forEach(col => {
                 const td = document.createElement('td');
                 td.textContent = rule[col] !== undefined ? rule[col] : '';
@@ -739,41 +858,37 @@
     }
 
     function updateSelectOptions() {
-        // 区域筛选
-        const regionSel = document.getElementById('filterRegion');
-        const curRegion = regionSel.value;
-        regionSel.innerHTML = '<option value="">全部</option>';
-        REGIONS.forEach(r => { const opt = document.createElement('option'); opt.value = r; opt.textContent = r; regionSel.appendChild(opt); });
-        regionSel.value = curRegion;
+        // 只显示数据中实际存在的值
+        function fillSel(id, values, curVal) {
+            const sel = document.getElementById(id);
+            sel.innerHTML = '<option value="">全部</option>';
+            [...new Set(values)].filter(Boolean).sort((a,b)=>String(a).localeCompare(String(b),'zh')).forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v; opt.textContent = v; sel.appendChild(opt);
+            });
+            sel.value = curVal;
+        }
 
-        // 国家筛选（联动区域）
+        // 区域：仅显示数据中有的
+        const curRegion = document.getElementById('filterRegion').value;
+        fillSel('filterRegion', getUniqueValues('region'), curRegion);
+
+        // 国家：联动区域，且只显示数据中有的
         const selectedRegion = document.getElementById('filterRegion').value;
-        let countriesForFilter = selectedRegion ? (REGION_COUNTRY_MAP[selectedRegion] || []) : FULL_COUNTRY_LIST;
-        const countrySel = document.getElementById('filterCountry');
-        const curCountry = countrySel.value;
-        countrySel.innerHTML = '<option value="">全部</option>';
-        countriesForFilter.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.textContent = c; countrySel.appendChild(opt); });
-        countrySel.value = curCountry;
+        const countriesInData = getUniqueValues('country');
+        const countriesForFilter = selectedRegion
+            ? countriesInData.filter(c => (REGION_COUNTRY_MAP[selectedRegion]||[]).includes(c))
+            : countriesInData;
+        const curCountry = document.getElementById('filterCountry').value;
+        fillSel('filterCountry', countriesForFilter, curCountry);
 
-        // 口岸
-        const portSel = document.getElementById('filterPort');
-        const curPort = portSel.value;
-        let ports = [...PORT_OPTIONS];
-        getUniqueValues('port').forEach(p => { if (!ports.includes(p)) ports.push(p); });
-        ports.sort();
-        portSel.innerHTML = '<option value="">全部</option>';
-        ports.forEach(p => { const opt = document.createElement('option'); opt.value = p; opt.textContent = p; portSel.appendChild(opt); });
-        portSel.value = curPort;
+        // 口岸：只显示数据中有的
+        const curPort = document.getElementById('filterPort').value;
+        fillSel('filterPort', getUniqueValues('port'), curPort);
 
-        // 航司
-        const airlineSel = document.getElementById('filterAirline');
-        const curAirline = airlineSel.value;
-        let airlines = [...AIRLINE_OPTIONS];
-        getUniqueValues('airline').forEach(a => { if (!airlines.includes(a)) airlines.push(a); });
-        airlines.sort();
-        airlineSel.innerHTML = '<option value="">全部</option>';
-        airlines.forEach(a => { const opt = document.createElement('option'); opt.value = a; opt.textContent = a; airlineSel.appendChild(opt); });
-        airlineSel.value = curAirline;
+        // 航司：只显示数据中有的
+        const curAirline = document.getElementById('filterAirline').value;
+        fillSel('filterAirline', getUniqueValues('airline'), curAirline);
     }
 
     function updateButtonsState() {
@@ -797,12 +912,48 @@
 
     async function addNewRule() {
         if (currentMode !== 'edit') { alert("请切换到修改模式后再添加规则"); return; }
-        rulesData.push({
-            region: "东南亚", country: "新加坡", payment: "预付", weightSeg: "0-15kg",
-            cargoType: "文件", port: "SIN", airline: "SQ", routeCode: "NEW-HUB", priority: 5
-        });
+        // 找到勾选的行，在其下方插入
+        const checked = document.querySelectorAll('.row-select:checked');
+        const checkedIndexes = Array.from(checked).map(cb => parseInt(cb.dataset.idx)).filter(i => !isNaN(i));
+        let insertAfter = rulesData.length - 1; // 默认插到末尾
+        let templateRule = null;
+        if (checkedIndexes.length > 0) {
+            insertAfter = Math.max(...checkedIndexes);
+            templateRule = rulesData[insertAfter]; // 以勾选行为模板
+        }
+        const newRule = templateRule ? {
+            region: templateRule.region,
+            country: templateRule.country,
+            countryEn: templateRule.countryEn || '',
+            countryCode: templateRule.countryCode || '',
+            payment: templateRule.payment,
+            weightSeg: templateRule.weightSeg,
+            cargoType: templateRule.cargoType,
+            port: templateRule.port,
+            airline: templateRule.airline,
+            routeCode: '新路由-待填',
+            remark: '',
+            priority: templateRule.priority,
+        } : {
+            region: "东南亚", country: "新加坡", countryEn: "Singapore", countryCode: "SG",
+            payment: "预付", weightSeg: "0-15kg", cargoType: "文件",
+            port: "SIN", airline: "SQ", routeCode: "新路由-待填", remark: "", priority: 5
+        };
+        rulesData.splice(insertAfter + 1, 0, newRule);
         await saveDataToCloud();
         renderTable();
+        // 滚动到新插入的行并高亮
+        setTimeout(() => {
+            const allRows = document.querySelectorAll('#tableBody tr');
+            // 找到routeCode为新路由-待填的行高亮
+            allRows.forEach(row => {
+                if (row.textContent.includes('新路由-待填')) {
+                    row.style.background = '#fff3cd';
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => { row.style.background = ''; }, 3000);
+                }
+            });
+        }, 100);
     }
 
     async function deleteSelectedRows() {
@@ -819,8 +970,8 @@
     }
 
     function exportToCSV() {
-        const headers = ['区域','国家','付款方式','重量段','货物类型','口岸','航司','路由结果','优先级'];
-        const rows = rulesData.map(r => [r.region, r.country, r.payment, r.weightSeg, r.cargoType, r.port, r.airline, r.routeCode, r.priority]);
+        const headers = ['区域','国家','国家英文','国家代码','付款方式','重量段','货物类型','口岸','航司','路由结果','备注','优先级'];
+        const rows = rulesData.map(r => [r.region, r.country, r.countryEn||'', r.countryCode||'', r.payment, r.weightSeg, r.cargoType, r.port, r.airline, r.routeCode, r.remark||'', r.priority]);
         const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
         const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
@@ -851,22 +1002,31 @@
                 else if (h.includes('货物')) colMap.cargoType = idx;
                 else if (h.includes('口岸')) colMap.port = idx;
                 else if (h.includes('航司')) colMap.airline = idx;
+                else if (h.includes('英文') || h.toLowerCase().includes('english')) colMap.countryEn = idx;
+                else if (h.includes('代码') || h.includes('code')) colMap.countryCode = idx;
                 else if (h.includes('路由')) colMap.routeCode = idx;
+                else if (h.includes('备注') || h.includes('remark')) colMap.remark = idx;
                 else if (h.includes('优先')) colMap.priority = idx;
             });
             for (let i=1; i<lines.length; i++) {
                 if (!lines[i].trim()) continue;
                 const parts = lines[i].split(',').map(p => p.replace(/^"|"$/g, '').trim());
                 if (parts.length < 3) continue;
+                const country = colMap.country !== undefined ? parts[colMap.country] : '';
+                const autoEn = COUNTRY_INFO[country]?.en || '';
+                const autoCode = COUNTRY_INFO[country]?.code || '';
                 const rule = {
                     region: colMap.region !== undefined ? parts[colMap.region] : '',
-                    country: colMap.country !== undefined ? parts[colMap.country] : '',
+                    country,
+                    countryEn: colMap.countryEn !== undefined ? parts[colMap.countryEn] : autoEn,
+                    countryCode: colMap.countryCode !== undefined ? parts[colMap.countryCode] : autoCode,
                     payment: colMap.payment !== undefined ? parts[colMap.payment] : '预付',
                     weightSeg: colMap.weightSeg !== undefined ? parts[colMap.weightSeg] : '0-15kg',
                     cargoType: colMap.cargoType !== undefined ? parts[colMap.cargoType] : '文件',
                     port: colMap.port !== undefined ? parts[colMap.port] : '',
                     airline: colMap.airline !== undefined ? parts[colMap.airline] : '',
                     routeCode: colMap.routeCode !== undefined ? parts[colMap.routeCode] : '',
+                    remark: colMap.remark !== undefined ? parts[colMap.remark] : '',
                     priority: colMap.priority !== undefined ? parseInt(parts[colMap.priority]) || 5 : 5
                 };
                 if (rule.country && rule.routeCode) newRules.push(rule);
