@@ -604,9 +604,7 @@
     async function getOSSClient() {
         // 令牌有效期内复用，提前5分钟刷新
         if (_ossClient && Date.now() < _ossClientExpiry - 300000) return _ossClient;
-        const res = await fetch(STS_URL);
-        if (!res.ok) throw new Error(`STS 服务请求失败: ${res.status}`);
-        const creds = await res.json();
+        const creds = await fetchSTS();
         _ossClient = new OSS({
             region: creds.region,
             accessKeyId: creds.accessKeyId,
@@ -614,13 +612,25 @@
             stsToken: creds.securityToken,
             bucket: creds.bucket,
             refreshSTSToken: async () => {
-                const r = await fetch(STS_URL);
-                const c = await r.json();
+                const c = await fetchSTS();
                 return { accessKeyId: c.accessKeyId, accessKeySecret: c.accessKeySecret, stsToken: c.securityToken };
             }
         });
         _ossClientExpiry = new Date(creds.expiration).getTime();
         return _ossClient;
+    }
+
+    // 兼容FC事件函数（body是字符串）和直接返回JSON两种格式
+    async function fetchSTS() {
+        const res = await fetch(STS_URL);
+        if (!res.ok) throw new Error(`STS 服务请求失败: ${res.status}`);
+        const data = await res.json();
+        // FC事件函数返回 {statusCode, headers, body} 格式，body是JSON字符串
+        if (data.body && typeof data.body === 'string') {
+            return JSON.parse(data.body);
+        }
+        // Cloudflare Worker 或其他直接返回JSON的格式
+        return data;
     }
 
     async function loadDataFromCloud() {
